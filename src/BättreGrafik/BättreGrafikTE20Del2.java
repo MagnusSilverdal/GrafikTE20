@@ -1,8 +1,13 @@
 package BättreGrafik;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 import java.awt.image.BufferStrategy;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Enkel grafik. Skapa en Canvas men skriv en egen metod för att anropa ritandet. För att kunna styra fps och ups
@@ -16,7 +21,7 @@ import java.awt.image.BufferStrategy;
 /**
  * Vi utökar klassen Canvas med vår bild och implementerar runnable så att den kan köras som en egen tråd
  */
-public class BättreGrafikTE20Del1 extends Canvas implements Runnable {
+public class BättreGrafikTE20Del2 extends Canvas implements Runnable {
     // Variabler för tråden
     private Thread thread;
     int fps = 30;
@@ -33,11 +38,17 @@ public class BättreGrafikTE20Del1 extends Canvas implements Runnable {
     int sunY = 100;
     int cloudX = 100;
     int cloudY = 50;
+    int marioX = 400;
+    int marioY = 300;
+    int marioVX = 0;
+    int marioVY = 0;
+
+    private BufferedImage marioimg;
 
     /**
      * Skapa ett fönster och lägg in grafiken i det.
      */
-    public BättreGrafikTE20Del1() {
+    public BättreGrafikTE20Del2() {
         JFrame frame = new JFrame("Del 4");
         this.setSize(width, height);
         frame.add(this);
@@ -46,6 +57,16 @@ public class BättreGrafikTE20Del1 extends Canvas implements Runnable {
         frame.setVisible(true);
         // Börja med animationen avslagen
         isRunning = false;
+
+        // Lägg till en keylistener
+        frame.addKeyListener(new KL());
+
+        // Läs in en bild
+        try {
+            marioimg = ImageIO.read(new File("supermario2.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public synchronized void start() {
@@ -65,12 +86,12 @@ public class BättreGrafikTE20Del1 extends Canvas implements Runnable {
 
     @Override
     public void run() {
-        double deltaT = 1000.0/fps;
+        double deltaT = 1000.0 / fps;
         long lastTime = System.currentTimeMillis();
 
         while (isRunning) {
             long now = System.currentTimeMillis();
-            if (now-lastTime > deltaT) {
+            if (now - lastTime > deltaT) {
                 update();
                 lastTime = now;
             }
@@ -104,13 +125,18 @@ public class BättreGrafikTE20Del1 extends Canvas implements Runnable {
      * vänster
      */
     private void update() {
+        if (marioX + marioVX < width+4*marioimg.getWidth() && marioX + marioVX > 0)
+            marioX += marioVX;
+        if (marioY + marioVY < height && marioY + marioVY > 250-4*marioimg.getHeight())
+            marioY += marioVY;
+
         cloudX += 5;
-        if (cloudX > 750)
-            cloudX = 0;
+        if (cloudX > 750) cloudX = 0;
     }
 
     /**
      * Rita ut alla saker. Ordningen är viktig eftersom vi kan rita saker på andra saker.
+     *
      * @param g grafiken
      */
     private void draw(Graphics g) {
@@ -118,78 +144,85 @@ public class BättreGrafikTE20Del1 extends Canvas implements Runnable {
         drawMountains(g, 150);
         drawGrass(g);
         drawSun(g, sunX, sunY);
-        drawCloud(g, cloudX,cloudY);
-        drawTree(g, treeX,treeY);
-        drawTree(g, treeX+30,treeY);
-        drawTree(g, treeX+60,treeY);
+        drawCloud(g, cloudX, cloudY);
+        drawTree(g, treeX, treeY);
+        drawTree(g, treeX + 30, treeY);
+        drawTree(g, treeX + 60, treeY);
+        g.drawImage(marioimg, marioX, marioY, 4*marioimg.getWidth(), 4*marioimg.getHeight(),null);
     }
 
     /**
      * Rita ett bulligt moln
-     * @param g grafiken
+     *
+     * @param g      grafiken
      * @param cloudX koordinat
      * @param cloudY koordinat
      */
     private void drawCloud(Graphics g, int cloudX, int cloudY) {
         g.setColor(Color.white);
-        g.fillOval(cloudX,cloudY,30,30);
-        g.fillOval(cloudX+20,cloudY-10,30,30+10);
-        g.fillOval(cloudX+40,cloudY,30,30);
+        g.fillOval(cloudX, cloudY, 30, 30);
+        g.fillOval(cloudX + 20, cloudY - 10, 30, 30 + 10);
+        g.fillOval(cloudX + 40, cloudY, 30, 30);
     }
 
     /**
      * En sol...
-     * @param g grafiken
+     *
+     * @param g    grafiken
      * @param sunX koordinat
      * @param sunY koordinat
      */
     private void drawSun(Graphics g, int sunX, int sunY) {
         g.setColor(Color.yellow);
-        g.fillOval(sunX,sunY,40,40);
+        g.fillOval(sunX, sunY, 40, 40);
     }
 
     /**
      * Rita gräs i nederkant av bilden
+     *
      * @param g grafiken
      */
     private void drawGrass(Graphics g) {
         g.setColor(Color.green);
-        g.fillRect(0,250,width,height);
+        g.fillRect(0, 250, width, height);
     }
 
     /**
      * Rita en bergskedja definierad som en polygon (en lista av x och y-koordinater)
+     *
      * @param g grafiken
      * @param y koordinat för höjden
      */
     private void drawMountains(Graphics g, int y) {
         g.setColor(Color.darkGray);
-        int[] xs = {0,200,240,470,550,650,800};
-        int[] ys = {y+100,y,y+50,y,y+50,y,y+100};
-        Polygon shape = new Polygon(xs,ys,7);
+        int[] xs = {0, 200, 240, 470, 550, 650, 800};
+        int[] ys = {y + 100, y, y + 50, y, y + 50, y, y + 100};
+        Polygon shape = new Polygon(xs, ys, 7);
         g.fillPolygon(shape);
     }
 
     /**
      * Rita himlen över hela bilden bilden
+     *
      * @param g grafiken
      */
     private void drawHeaven(Graphics g) {
         g.setColor(new Color(0x22FFDD));
-        g.fillRect(0,0,width,height);
+        g.fillRect(0, 0, width, height);
     }
 
     /**
      * Här är instruktionerna för att rita ett träd.
+     *
      * @param g Den Graphics som det ska ritas på
      * @param x En koordinat
      * @param y En annan koordinat
      */
     private void drawTree(Graphics g, int x, int y) {
         g.setColor(new Color(0x00DD33));
-        g.fillRect(x,y,20,40);
+        g.fillRect(x, y, 20, 40);
         g.setColor(Color.white);
-        g.fillRect(x+8,y+40,4,20);
+        g.fillRect(x + 8, y + 40, 4, 20);
     }
 
     /**
@@ -197,7 +230,46 @@ public class BättreGrafikTE20Del1 extends Canvas implements Runnable {
      * Skapa först en JFrame och en canvas, starta sedan tråden som sköter animationen.
      */
     public static void main(String[] args) {
-        BättreGrafikTE20Del1 exempel = new BättreGrafikTE20Del1();
+        BättreGrafikTE20Del2 exempel = new BättreGrafikTE20Del2();
         exempel.start();
+    }
+
+    private class KL implements KeyListener {
+        @Override
+        public void keyTyped(KeyEvent keyEvent) {
+
+        }
+
+        @Override
+        public void keyPressed(KeyEvent keyEvent) {
+            if (keyEvent.getKeyChar() == 'a') {
+                marioVX = -5;
+            }
+            if (keyEvent.getKeyChar() == 'd') {
+                marioVX = 5;
+            }
+            if (keyEvent.getKeyChar() == 'w') {
+                marioVY = -5;
+            }
+            if (keyEvent.getKeyChar() == 's') {
+                marioVY = 5;
+            }
+        }
+
+        @Override
+        public void keyReleased(KeyEvent keyEvent) {
+            if (keyEvent.getKeyChar() == 'a') {
+                marioVX = 0;
+            }
+            if (keyEvent.getKeyChar() == 'd') {
+                marioVX = 0;
+            }
+            if (keyEvent.getKeyChar() == 'w') {
+                marioVY = 0;
+            }
+            if (keyEvent.getKeyChar() == 's') {
+                marioVY = 0;
+            }
+        }
     }
 }
