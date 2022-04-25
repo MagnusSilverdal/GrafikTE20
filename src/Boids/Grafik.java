@@ -11,7 +11,7 @@ import java.awt.image.BufferStrategy;
  */
 public class Grafik extends Canvas implements Runnable{
     private Thread thread;
-    int fps = 30;
+    int fps = 1;
     private boolean isRunning;
     private BufferStrategy bs;
     private final int height = 1000;

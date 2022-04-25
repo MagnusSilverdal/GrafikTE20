@@ -10,7 +10,7 @@ public class Boid {
     Vector velocity;
     Vector acceleration;
     double maxVelocity = 4;
-    double maxAcceleration = 0.2;
+    double maxAcceleration = 1;
     int width;
     int height;
 
@@ -26,8 +26,8 @@ public class Boid {
             y = -y;
 
         velocity = new Vector(x,y);
-//        velocity.normalize();
-//        velocity.multiply(maxVelocity);
+        velocity.normalize();
+        velocity.multiply(maxVelocity);
         acceleration = new Vector(0,0);
     }
 
@@ -35,7 +35,7 @@ public class Boid {
         edge(width,height);
         align(boids);
         cohesion(boids);
-        //separation(boids);
+        separation(boids);
         acceleration.limit(maxAcceleration);
         velocity.add(acceleration);
         velocity.limit(maxVelocity);
@@ -55,7 +55,7 @@ public class Boid {
     }
 
     public void align(Boid[] boids) {
-        double perception = 100;
+        double perception = 50;
         int numBoids = 0;
         Vector avgVel = new Vector(0,0);
         for (Boid b : boids) {
@@ -68,6 +68,8 @@ public class Boid {
             avgVel.divide(numBoids);
             avgVel.sub(this.velocity);
         }
+        //avgVel.normalize();
+        System.out.println("Align: " + avgVel.x + ", " + avgVel.y);
         acceleration.add(avgVel);
     }
 
@@ -85,6 +87,7 @@ public class Boid {
             avgPos.divide(numBoids);
             avgPos.sub(this.position);
         }
+        System.out.println("Cohesion: " + avgPos.x + ", " + avgPos.y);
         acceleration.add(avgPos);
     }
 
@@ -94,7 +97,8 @@ public class Boid {
         Vector avgPos = new Vector(0,0);
         for (Boid b : boids) {
             if (this != b && this.dist(b) < perception) {
-                Vector diff = new Vector(position.x-b.position.x,position.y-b.position.y);
+                Vector diff = new Vector(position.x,position.y);
+                diff.sub(b.position);
                 double dist = this.dist(b);
                 diff.divide(dist);
                 numBoids++;
@@ -103,9 +107,9 @@ public class Boid {
         }
         if (numBoids > 0) {
             avgPos.divide(numBoids);
-            avgPos.sub(this.position);
-            avgPos.multiply(-1);
+            avgPos.sub(this.velocity);
         }
+        System.out.println("Separation: " + avgPos.x + ", " + avgPos.y);
         acceleration.add(avgPos);
     }
 
